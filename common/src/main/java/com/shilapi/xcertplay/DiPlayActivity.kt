@@ -388,6 +388,7 @@ class DiPlayActivity : ComponentActivity() {
         if (mode == WirelessHotspotMode.MANUAL) {
             link += SettingItem.Note(getString(R.string.s_1_open_car_hotspot_settings_turn_the_hotspot_on_and_sele))
             link += SettingItem.Action(getString(R.string.open_car_hotspot_settings)) { openCarWifiSettings() }
+            link += SettingItem.Action(getString(R.string.settings_car_hotspot_config_title)) { importCarHotspotConfig() }
             link += SettingItem.Action(if (pendingCarHotspotSetup) getString(R.string.save_hotspot_details_and_use_this_mode) else "${getString(R.string.edit_saved_hotspot_prefix)}${storedSsid()}") {
                 askHotspotCredentials { ssid, password ->
                     saveHotspotCredentials(ssid, password)
@@ -511,6 +512,38 @@ class DiPlayActivity : ComponentActivity() {
     private fun storedPassword() = AirPlayPersistence.loadManualHotspotPassphrase(this)
     private fun hotspotError(ssid: String, password: String) =
         com.shilapi.xcertplay.orchestration.ManualHotspotValidation.error(ssid, password)?.let { getString(it.messageResource()) }
+
+    /** Reads the car's own saved hotspot name and password, so nothing has to be typed. It never writes to the car. */
+    private fun importCarHotspotConfig() {
+        toast(getString(R.string.adb_checking_may_ask))
+        Thread({
+            val read = com.shilapi.xcertplay.network.CarHotspotConfigRead.read(applicationContext, mayAsk = true,
+                log = { android.util.Log.i("DiPlay-Hotspot", it) })
+            val saved = read.credentials
+            runOnUiThread {
+                if (isDestroyed) return@runOnUiThread
+                if (saved != null) {
+                    AirPlayPersistence.saveManualHotspotSsid(this, saved.ssid)
+                    AirPlayPersistence.saveManualHotspotPassphrase(this, saved.passphrase)
+                    AirPlayPersistence.saveManualHotspotSecurity(this, saved.security)
+                    pendingCarHotspotSetup = false
+                    toast(getString(R.string.settings_car_hotspot_config_imported))
+                    render()
+                } else {
+                    toast(getString(when {
+                        read.reason == com.shilapi.xcertplay.network.CarHotspotConfigRead.Reason.UNSUPPORTED_SDK ->
+                            R.string.settings_car_hotspot_config_unsupported
+                        read.reason == com.shilapi.xcertplay.network.CarHotspotConfigRead.Reason.ADB_UNAVAILABLE -> when (read.access) {
+                            com.shilapi.xcertplay.adb.LocalAdb.Access.NOT_APPROVED -> R.string.adb_not_approved
+                            com.shilapi.xcertplay.adb.LocalAdb.Access.UNSUPPORTED -> R.string.adb_pairing_only
+                            else -> R.string.adb_off
+                        }
+                        else -> R.string.adb_check_failed
+                    }))
+                }
+            }
+        }, "hotspot-config-read").start()
+    }
 
     private fun existingWifiError() = com.shilapi.xcertplay.orchestration.ManualHotspotValidation.error(
         AirPlayPersistence.loadExistingWifiSsid(this), AirPlayPersistence.loadExistingWifiPassphrase(this))
