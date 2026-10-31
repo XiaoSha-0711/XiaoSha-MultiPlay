@@ -1,8 +1,10 @@
 <p align="center">
-  <img src="docs/images/logo.png" width="96" alt="XiaoSha MultiPlay">
+  <img src="docs/images/logo.png" width="96" alt="XiaoSha Multiplay">
 </p>
 
-<h1 align="center">XiaoSha MultiPlay</h1>
+<h1 align="center">XiaoSha Multiplay</h1>
+
+<p align="center"><i>One Device. More Possibilities.</i></p>
 
 <p align="center">
   Turn an Android phone into a car screen: <b>CarPlay</b> for an iPhone, <b>Android Auto</b> for an Android phone.<br>

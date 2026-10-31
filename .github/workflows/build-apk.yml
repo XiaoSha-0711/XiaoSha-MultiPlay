@@ -43,7 +43,7 @@ jobs:
             echo "::warning::RELEASE_KEYSTORE_B64 is not set; signing with a one-off key, so this APK cannot update an earlier install."
             pw=$(openssl rand -hex 16)
             keytool -genkeypair -keystore "$RUNNER_TEMP/release.jks" -storetype PKCS12 -storepass "$pw" -keypass "$pw" \
-              -alias xiaosha -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=XiaoSha MultiPlay"
+              -alias xiaosha -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=XiaoSha Multiplay"
             echo "ANDROID_KEY_ALIAS=xiaosha" >> "$GITHUB_ENV"
             echo "ANDROID_KEYSTORE_PASSWORD=$pw" >> "$GITHUB_ENV"
             echo "ANDROID_KEY_PASSWORD=$pw" >> "$GITHUB_ENV"

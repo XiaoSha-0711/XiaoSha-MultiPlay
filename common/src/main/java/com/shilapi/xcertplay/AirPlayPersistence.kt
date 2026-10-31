@@ -146,7 +146,7 @@ object AirPlayPersistence {
     const val DEFAULT_MODEL = APP_DISPLAY_NAME
     const val DEFAULT_OEM_LABEL = "XiaoSha"
     /** Earlier releases defaulted to these and saved them with the settings; read them as the defaults. */
-    private val LEGACY_DEFAULT_IDENTITIES = setOf("DiPlay", "XiaoSha CarPlay")
+    private val LEGACY_DEFAULT_IDENTITIES = setOf("DiPlay", "XiaoSha CarPlay", "XiaoSha MultiPlay")
     private const val LEGACY_DEFAULT_OEM_LABEL = "BYD"
     const val DEFAULT_MFI_I2C_PATH = "/dev/i2c-1"
 

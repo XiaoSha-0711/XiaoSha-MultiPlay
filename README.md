@@ -1,8 +1,10 @@
 <p align="center">
-  <img src="docs/images/logo.png" width="96" alt="XiaoSha MultiPlay">
+  <img src="docs/images/logo.png" width="96" alt="XiaoSha Multiplay">
 </p>
 
-<h1 align="center">XiaoSha MultiPlay</h1>
+<h1 align="center">XiaoSha Multiplay</h1>
+
+<p align="center"><i>One Device. More Possibilities.</i></p>
 
 <p align="center">
   把一支 Android 手機變成車用螢幕：iPhone 跑 <b>CarPlay</b>，Android 手機跑 <b>Android Auto</b>。<br>

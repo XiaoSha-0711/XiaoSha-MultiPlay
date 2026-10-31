@@ -103,7 +103,7 @@
     <string name="a_familiar_drive">Привычная поездка.</string>
     <string name="a_previous_wi_fi_direct_connection_is_still_running_reset">Предыдущее подключение Wi-Fi Direct всё ещё активно. Сбросьте его, чтобы подключиться.</string>
     <string name="about">О программе</string>
-    <string name="about_diplay">О XiaoSha MultiPlay</string>
+    <string name="about_diplay">О XiaoSha Multiplay</string>
     <string name="active">Активно</string>
     <string name="advanced_audio_channel_mapping">Расширенное сопоставление звуковых каналов</string>
     <string name="airplay_icon">Значок AirPlay</string>
@@ -299,7 +299,7 @@
     <string name="preparing_mfi_authentication">Подготовка аутентификации MFi</string>
     <string name="ready">Готово</string>
     <string name="ready_when_you_are">Готово, когда вы будете готовы</string>
-    <string name="receiver_based_on_xcertplay_licensed_under_gpl_3_0_diplay">Приёмник на базе xcertplay, лицензирован по GPL-3.0. Интерфейс XiaoSha MultiPlay следует дизайну DiAuto, лицензированному по AGPL-3.0.\n\nВключает AndroidX, Bouncy Castle, JmDNS и SLF4J. Исходный код и уведомления о лицензиях прилагаются к этому выпуску.\n\nCarPlay и значок CarPlay принадлежат Apple Inc. XiaoSha MultiPlay — независимый проект.</string>
+    <string name="receiver_based_on_xcertplay_licensed_under_gpl_3_0_diplay">Приёмник на базе xcertplay, лицензирован по GPL-3.0. Интерфейс XiaoSha Multiplay следует дизайну DiAuto, лицензированному по AGPL-3.0.\n\nВключает AndroidX, Bouncy Castle, JmDNS и SLF4J. Исходный код и уведомления о лицензиях прилагаются к этому выпуску.\n\nCarPlay и значок CarPlay принадлежат Apple Inc. XiaoSha Multiplay — независимый проект.</string>
     <string name="reconnecting_to_your_iphone">Переподключение к iPhone…</string>
     <string name="remote">Удалённый</string>
     <string name="remote_server_address_contains_u_0000">Адрес удалённого сервера содержит U+0000</string>
@@ -309,7 +309,7 @@
     <string name="report_android_location_to_the_iphone">Передавать местоположение Android на iPhone</string>
     <string name="report_location_to_iphone">Передавать местоположение на iPhone</string>
     <string name="report_saved_open_it_from_your_file_manager_to_share_it">Отчёт сохранён. Откройте его в файловом менеджере, чтобы поделиться.</string>
-    <string name="reports_save_to_downloads_diplay">Отчёты сохраняются в Downloads/XiaoSha MultiPlay.\u0020</string>
+    <string name="reports_save_to_downloads_diplay">Отчёты сохраняются в Downloads/XiaoSha Multiplay.\u0020</string>
     <string name="requesting_iphone_usb_permission">Запрос разрешения USB для iPhone</string>
     <string name="requesting_mfi_usb_permission">Запрос разрешения USB для MFi</string>
     <string name="reset">Сбросить</string>

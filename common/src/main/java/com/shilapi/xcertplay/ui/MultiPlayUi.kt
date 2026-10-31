@@ -47,7 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.shilapi.xcertplay.host.R
 
-/** XiaoSha MultiPlay's palette: the logo's blue on neutral charcoal, with flat panels and small corners. */
+/** XiaoSha Multiplay's palette: the logo's blue on neutral charcoal, with flat panels and small corners. */
 internal object MultiPlayColors {
     val Background = Color(0xFF111214)
     val Surface = Color(0xFF1B1D20)
@@ -179,6 +179,8 @@ internal fun HomePage(model: HomeModel, actions: HomeActions) {
     Spacer(Modifier.height(16.dp))
     SecondaryButton(stringResource(R.string.speed_camera), onClick = actions.speedCamera)
     Spacer(Modifier.height(24.dp))
+    Text(stringResource(R.string.app_tagline), color = MultiPlayColors.Accent, fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp)
+    Spacer(Modifier.height(4.dp))
     Text("${stringResource(R.string.home_public_preview)}${model.version}", color = MultiPlayColors.Muted, fontSize = 12.sp)
 }
 

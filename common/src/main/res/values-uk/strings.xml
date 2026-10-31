@@ -96,7 +96,7 @@
     <string name="safe_area_mapping_summary">Безпечна область: %1$d x %2$d у точці (%3$d, %4$d) на екрані %5$d x %6$d</string>
     <string name="settings_android9_compat">Наведені нижче налаштування недоступні та приховані в Android 9 (API 28):\n• Програмний декодер HEVC — натомість використовується апаратне декодування.</string>
     <string name="settings_mfi_address_hint">Адреса має починатися з http:// або https://. Токен необов’язковий і надсилається як токен авторизації Bearer.</string>
-    <string name="app_name">XiaoSha MultiPlay</string>
+    <string name="app_name">XiaoSha Multiplay</string>
     <string name="language_section_title">Мова</string>
     <string name="language_app_language">Мова застосунку</string>
     <string name="language_system_default">Мова системи</string>
@@ -106,7 +106,7 @@
     <string name="a_familiar_drive">Знайома подорож.</string>
     <string name="a_previous_wi_fi_direct_connection_is_still_running_reset">Попереднє з’єднання Wi-Fi Direct ще активне. Скиньте його, щоб підключитися.</string>
     <string name="about">Про застосунок</string>
-    <string name="about_diplay">Про XiaoSha MultiPlay</string>
+    <string name="about_diplay">Про XiaoSha Multiplay</string>
     <string name="active">Активно</string>
     <string name="advanced_audio_channel_mapping">Розширене налаштування аудіоканалів</string>
     <string name="airplay_icon">Значок AirPlay</string>
@@ -196,7 +196,7 @@
     <string name="default_placeholder_icon">Типовий значок-заповнювач</string>
     <string name="diagnostic_report_saved">Діагностичний звіт збережено</string>
     <string name="diagnostics">Діагностика</string>
-    <string name="diplay">XiaoSha MultiPlay</string>
+    <string name="diplay">XiaoSha Multiplay</string>
     <string name="discard_changes_and_exit_settings">Скасувати зміни й вийти з налаштувань</string>
     <string name="disconnect">Відключити</string>
     <string name="discovering_iphone">Пошук iPhone</string>
@@ -306,7 +306,7 @@
     <string name="preparing_mfi_authentication">Підготовка автентифікації MFi</string>
     <string name="ready">Готово</string>
     <string name="ready_when_you_are">Готово до підключення</string>
-    <string name="receiver_based_on_xcertplay_licensed_under_gpl_3_0_diplay">Приймач створено на основі xcertplay за ліцензією GPL-3.0. Інтерфейс XiaoSha MultiPlay наслідує дизайн DiAuto за ліцензією AGPL-3.0.\n\nВикористовуються AndroidX, Bouncy Castle, JmDNS і SLF4J. Вихідний код і повідомлення про ліцензії додаються до цього випуску.\n\nCarPlay і його значок належать Apple Inc. XiaoSha MultiPlay — незалежний проєкт.</string>
+    <string name="receiver_based_on_xcertplay_licensed_under_gpl_3_0_diplay">Приймач створено на основі xcertplay за ліцензією GPL-3.0. Інтерфейс XiaoSha Multiplay наслідує дизайн DiAuto за ліцензією AGPL-3.0.\n\nВикористовуються AndroidX, Bouncy Castle, JmDNS і SLF4J. Вихідний код і повідомлення про ліцензії додаються до цього випуску.\n\nCarPlay і його значок належать Apple Inc. XiaoSha Multiplay — незалежний проєкт.</string>
     <string name="reconnecting_to_your_iphone">Повторне підключення до iPhone…</string>
     <string name="remote">Віддалено</string>
     <string name="remote_server_address_contains_u_0000">Адреса віддаленого сервера містить U+0000</string>
@@ -316,7 +316,7 @@
     <string name="report_android_location_to_the_iphone">Передавати геопозицію Android на iPhone</string>
     <string name="report_location_to_iphone">Передавати геопозицію на iPhone</string>
     <string name="report_saved_open_it_from_your_file_manager_to_share_it">Звіт збережено. Щоб поділитися ним, відкрийте його у файловому менеджері.</string>
-    <string name="reports_save_to_downloads_diplay">Звіти зберігаються в Downloads/XiaoSha MultiPlay.\u0020</string>
+    <string name="reports_save_to_downloads_diplay">Звіти зберігаються в Downloads/XiaoSha Multiplay.\u0020</string>
     <string name="requesting_iphone_usb_permission">Запит дозволу на USB-доступ до iPhone</string>
     <string name="requesting_mfi_usb_permission">Запит дозволу на USB-доступ до MFi</string>
     <string name="reset">Скинути</string>
