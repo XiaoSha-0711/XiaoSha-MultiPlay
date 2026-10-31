@@ -38,6 +38,8 @@ class WifiP2pGroupManagerTest {
         shadowOf(context).grantPermissions(Manifest.permission.ACCESS_FINE_LOCATION)
         val wifi = context.getSystemService(WifiManager::class.java)
         wifi.isWifiEnabled = true
+        // A station on 5180 MHz implies a 5 GHz radio; Robolectric reports none by default.
+        shadowOf(wifi).setIs5GHzBandSupported(true)
         shadowOf(wifi.connectionInfo).setFrequency(5180)
         shadowOf(wifi.connectionInfo).setSupplicantState(SupplicantState.COMPLETED)
     }
@@ -72,6 +74,48 @@ class WifiP2pGroupManagerTest {
         return encoded
     }
 
+    @Test fun manualChannelOverridesAlignmentWithoutReplacingAutomaticMemory() {
+        val remembered = seedMemory()
+        val logs = mutableListOf<String>()
+        WifiP2pGroupManager(context, logs::add, preferredChannel = 149).use { manager ->
+            val info = background { manager.start(5000) }
+            assertEquals(149, info.channel)
+            assertEquals(listOf(5745), radio.requests.map { it?.groupOwnerBand })
+            manager.onCarPlayConfirmed()
+            assertEquals(remembered, memory.getString("confirmed", null))
+        }
+        assertEquals(remembered, memory.getString("confirmed", null))
+        assertTrue(logs.any { it.contains("preference=149 frequencyMHz=5745") })
+        assertTrue(logs.any { it.contains("requestedMHz=5745 actualMHz=5745 matched=true") })
+        radio.requests.clear()
+        WifiP2pGroupManager(context).use { manager ->
+            background { manager.start(5000) }
+            assertEquals(listOf(2437), radio.requests.map { it?.groupOwnerBand })
+            manager.onCarPlayConfirmed()
+        }
+    }
+
+    @Test fun rejectedManualChannelHasAnActionableErrorAndNoFallback() {
+        radio.rejectCustom = true
+        WifiP2pGroupManager(context, preferredChannel = 149).use { manager ->
+            val error = failure { manager.start(5000) }
+            assertTrue(error.message!!.contains("channel 149"))
+            assertTrue(error.message!!.contains("Choose Auto"))
+        }
+        assertEquals(listOf(5745), radio.requests.map { it?.groupOwnerBand })
+        assertNull(memory.getString("confirmed", null))
+    }
+
+    @Test fun firmwareIgnoringManualChannelFailsAndRemovesItsOwnGroup() {
+        radio.reportedFrequency = 5180
+        WifiP2pGroupManager(context, preferredChannel = 149).use { manager ->
+            assertTrue(failure { manager.start(5000) }.message!!.contains("selected channel 36 instead"))
+        }
+        assertEquals(listOf(5745), radio.requests.map { it?.groupOwnerBand })
+        assertEquals(1, radio.removals)
+        assertNull(memory.getString("confirmed", null))
+    }
+
     @Test fun hotspotCreationAloneAndLateConfirmationAfterCloseAreNeverLearned() {
         val manager = WifiP2pGroupManager(context)
         background { manager.start(5000) }
@@ -85,7 +129,7 @@ class WifiP2pGroupManagerTest {
         radio.fixed24Only = true
         WifiP2pGroupManager(context).use { manager ->
             val info = background { manager.start(6000) }
-            assertEquals(3, radio.requests.size)
+            assertEquals(2, radio.requests.size)
             assertNull(memory.getString("confirmed", null))
             manager.onCarPlayConfirmed()
             val record = memory.getString("confirmed", null)!!
@@ -111,7 +155,7 @@ class WifiP2pGroupManagerTest {
         radio.allowed24 = setOf(2462)
         WifiP2pGroupManager(context).use { manager ->
             val info = background { manager.start(7000) }
-            assertEquals(listOf(2437, 5180, 5745, 2412, 2462), radio.requests.map { it?.groupOwnerBand })
+            assertEquals(listOf(2437, 5180, 2412, 2462), radio.requests.map { it?.groupOwnerBand })
             assertEquals(11, info.channel)
             assertNull(memory.getString("confirmed", null))
             manager.onCarPlayConfirmed()
@@ -137,13 +181,28 @@ class WifiP2pGroupManagerTest {
     }
 
     @Test fun rememberedDefaultUsesSystemCreationInsteadOfInventingAFixedChannel() {
-        seedMemory(kind = "system", requested = 0)
+        seedMemory(kind = "system", requested = 0, station = 2437)
+        shadowOf(context.getSystemService(WifiManager::class.java).connectionInfo).setFrequency(2437)
         WifiP2pGroupManager(context).use { manager ->
             background { manager.start(5000) }
             assertEquals(1, radio.requests.size)
             assertNull(radio.requests.single())
             manager.onCarPlayConfirmed()
             assertTrue(memory.getString("confirmed", null)!!.startsWith("system|0|2437|"))
+        }
+    }
+
+    @Test fun rememberedDefaultCannotBypassExplicitChannelsBesideFiveGhzStation() {
+        seedMemory(kind = "system", requested = 0, station = 5200)
+        shadowOf(context.getSystemService(WifiManager::class.java).connectionInfo).setFrequency(5200)
+        radio.fixed24Only = true
+        val logs = mutableListOf<String>()
+        WifiP2pGroupManager(context, logs::add).use { manager ->
+            background { manager.start(6000) }
+            assertEquals(listOf(5200, 2437), radio.requests.map { it?.groupOwnerBand })
+            assertTrue(logs.any { it.contains("remembered deferred mode=SYSTEM_DEFAULT") })
+            manager.onCarPlayConfirmed()
+            assertTrue(memory.getString("confirmed", null)!!.startsWith("frequency|2437|2437|5200|"))
         }
     }
 
@@ -204,7 +263,7 @@ class WifiP2pGroupManagerTest {
         val logs = mutableListOf<String>()
         WifiP2pGroupManager(context, logs::add).use { manager ->
             val info = background { manager.start(6000) }
-            assertEquals(listOf(5180, 5745, 2437), radio.requests.map { it?.groupOwnerBand })
+            assertEquals(listOf(5180, 2437), radio.requests.map { it?.groupOwnerBand })
             assertTrue(radio.requests.all { it != null && it.groupOwnerBand > 1000 })
             assertEquals(2437, info.frequencyMHz)
             assertEquals(6, info.channel)
@@ -236,7 +295,7 @@ class WifiP2pGroupManagerTest {
         radio.allowed24 = setOf(2462)
         WifiP2pGroupManager(context).use { manager ->
             val info = background { manager.start(6000) }
-            assertEquals(listOf(5180, 5745, 2437, 2412, 2462), radio.requests.map { it?.groupOwnerBand })
+            assertEquals(listOf(5180, 2437, 2412, 2462), radio.requests.map { it?.groupOwnerBand })
             assertEquals(11, info.channel)
         }
     }
@@ -261,6 +320,30 @@ class WifiP2pGroupManagerTest {
         assertEquals(0, radio.removals)
     }
 
+    // DiPlay's process ended during a session and left its group. A Galaxy Note20 (Android 13)
+    // answered group info only about 0.6 s after removing it, past the 0.5 s poll.
+    @Test fun aRetainedOwnGroupIsReclaimedWhenTheAnswerComesAfterItsRemoval() {
+        retainOwnGroup()
+        radio.groupInfoAfterRemovalMillis = 700
+        WifiP2pGroupManager(context).use { manager -> background { manager.start(5000) } }
+        assertEquals(1, radio.requests.size)
+    }
+
+    @Test fun aRemovalThatIsNeverAnsweredStillFails() {
+        retainOwnGroup()
+        radio.groupInfoAfterRemovalMillis = null
+        WifiP2pGroupManager(context).use { manager ->
+            assertTrue(failure { manager.start(5000) }.message!!.contains("did not respond"))
+        }
+        assertTrue(radio.requests.isEmpty())
+    }
+
+    private fun retainOwnGroup() {
+        val name = "DIRECT-dp000000000000-Ab12"
+        context.getSharedPreferences("carplay_wifi_p2p", Context.MODE_PRIVATE).edit().putString("owned_ssid", name).commit()
+        radio.group = radio.makeGroup(null).also { shadowOf(it).setNetworkName(name) }
+    }
+
     @Test fun closeLeavesAnotherAppsReplacementGroupRunning() {
         val logs = mutableListOf<String>()
         val manager = WifiP2pGroupManager(context, logs::add)
@@ -271,6 +354,18 @@ class WifiP2pGroupManagerTest {
         assertSame(replacement, radio.group)
         assertEquals(0, radio.removals)
         assertTrue(logs.any { it.contains("cleanup skipped=another_app_owns_group") })
+    }
+
+    @Test fun connectionSnapshotDoesNotInterpretAnEmptyP2pListAsFailedIphoneAssociation() {
+        val manager = WifiP2pGroupManager(context)
+        background { manager.start(5000) }
+        val snapshot = background { manager.connectionDiagnosticSnapshot() }
+        assertTrue(snapshot.contains("p2pGroup=present owner=true sameGroup=true"))
+        assertTrue(snapshot.contains("reportedP2pClients=0 association=unknown legacyClients=not_exposed"))
+        radio.group = null
+        assertEquals("p2pGroup=absent association=unknown", background { manager.connectionDiagnosticSnapshot() })
+        background { manager.close() }
+        assertEquals("p2pGroup=unavailable association=unknown", manager.connectionDiagnosticSnapshot())
     }
 
     @Test fun staleCloseCannotRemoveANewerDiPlaySession() {
@@ -362,8 +457,16 @@ class WifiP2pGroupManagerTest {
             listener.onP2pStateAvailable(WifiP2pManager.WIFI_P2P_STATE_ENABLED)
         }
 
+        /** After a removal, group info is answered this late, or never when null; 0 answers at once. */
+        var groupInfoAfterRemovalMillis: Long? = 0
+        private var removedAtNanos = 0L
+
         @Implementation override fun requestGroupInfo(channel: WifiP2pManager.Channel, listener: WifiP2pManager.GroupInfoListener) {
-            listener.onGroupInfoAvailable(group)
+            if (removals == 0) return listener.onGroupInfoAvailable(group)
+            val after = groupInfoAfterRemovalMillis ?: return
+            val waitMillis = after - (System.nanoTime() - removedAtNanos) / 1_000_000
+            if (waitMillis <= 0) return listener.onGroupInfoAvailable(group)
+            Thread { Thread.sleep(waitMillis); listener.onGroupInfoAvailable(group) }.start()
         }
 
         @Implementation override fun requestConnectionInfo(channel: WifiP2pManager.Channel, listener: WifiP2pManager.ConnectionInfoListener) {
@@ -388,6 +491,7 @@ class WifiP2pGroupManagerTest {
 
         @Implementation override fun removeGroup(channel: WifiP2pManager.Channel, listener: WifiP2pManager.ActionListener) {
             removals++
+            removedAtNanos = System.nanoTime()
             group = null
             listener.onSuccess()
         }

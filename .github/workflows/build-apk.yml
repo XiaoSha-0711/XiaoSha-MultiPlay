@@ -15,10 +15,11 @@ jobs:
       # Optional repository secrets (Settings → Secrets and variables → Actions), each base64-encoded:
       #   DIPLAY_IDENTITY_PK8_B64     offline-mfi/identity.pk8     → APK that can connect to an iPhone
       #   DIPLAY_CERTIFICATE_P7B_B64  offline-mfi/certificate.p7b
-      #   DEBUG_KEYSTORE_B64          a debug.keystore, so each build updates the last install in place
+      #   RELEASE_KEYSTORE_B64 / RELEASE_KEYSTORE_PASSWORD   the release keystore (alias xiaosha), so each build updates the last install in place
       IDENTITY_PK8_B64: ${{ secrets.DIPLAY_IDENTITY_PK8_B64 }}
       CERTIFICATE_P7B_B64: ${{ secrets.DIPLAY_CERTIFICATE_P7B_B64 }}
-      DEBUG_KEYSTORE_B64: ${{ secrets.DEBUG_KEYSTORE_B64 }}
+      RELEASE_KEYSTORE_B64: ${{ secrets.RELEASE_KEYSTORE_B64 }}
+      RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - name: Reject credential files in public source
@@ -31,11 +32,23 @@ jobs:
         with:
           packages: platform-tools platforms;android-37.0 build-tools;36.0.0 ndk;28.2.13676358 cmake;3.22.1
       - uses: gradle/actions/setup-gradle@v4
-      - name: Install stable debug signing key
-        if: env.DEBUG_KEYSTORE_B64 != ''
+      - name: Install release signing key
         run: |
-          mkdir -p ~/.android
-          echo "$DEBUG_KEYSTORE_B64" | base64 -d > ~/.android/debug.keystore
+          if [ -n "$RELEASE_KEYSTORE_B64" ]; then
+            echo "$RELEASE_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "ANDROID_KEY_ALIAS=xiaosha" >> "$GITHUB_ENV"
+            echo "ANDROID_KEYSTORE_PASSWORD=$RELEASE_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_PASSWORD=$RELEASE_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          else
+            echo "::warning::RELEASE_KEYSTORE_B64 is not set; signing with a one-off key, so this APK cannot update an earlier install."
+            pw=$(openssl rand -hex 16)
+            keytool -genkeypair -keystore "$RUNNER_TEMP/release.jks" -storetype PKCS12 -storepass "$pw" -keypass "$pw" \
+              -alias xiaosha -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=XiaoSha MultiPlay"
+            echo "ANDROID_KEY_ALIAS=xiaosha" >> "$GITHUB_ENV"
+            echo "ANDROID_KEYSTORE_PASSWORD=$pw" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_PASSWORD=$pw" >> "$GITHUB_ENV"
+          fi
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
       - name: Provide CarPlay authentication assets
         if: env.IDENTITY_PK8_B64 != '' && env.CERTIFICATE_P7B_B64 != ''
         run: |
@@ -44,17 +57,17 @@ jobs:
           echo "$IDENTITY_PK8_B64" | base64 -d > "$dir/offline-mfi/identity.pk8"
           echo "$CERTIFICATE_P7B_B64" | base64 -d > "$dir/offline-mfi/certificate.p7b"
           echo "DIPLAY_AUTH_ASSETS_DIR=$dir" >> "$GITHUB_ENV"
-      - name: Build standalone APK
+      - name: Build standalone release APK
         if: env.DIPLAY_AUTH_ASSETS_DIR != ''
-        run: ./gradlew :shared:testDebugUnitTest :common:testDebugUnitTest :mobile:assembleStandaloneDebug --continue --stacktrace
-      - name: Build source-only APK (cannot connect to an iPhone)
+        run: ./gradlew :mobile:assembleStandaloneRelease --stacktrace
+      - name: Build source-only release APK (cannot connect to an iPhone)
         if: env.DIPLAY_AUTH_ASSETS_DIR == ''
         run: |
           echo "::warning::CarPlay authentication secrets are not set; this APK cannot connect to an iPhone."
-          ./gradlew :shared:testDebugUnitTest :common:testDebugUnitTest :mobile:assembleDebug --continue --stacktrace
+          ./gradlew :mobile:assembleRelease --stacktrace
       - name: Remove authentication assets
         if: always()
-        run: rm -rf "$RUNNER_TEMP/diplay-auth" ~/.android/debug.keystore
+        run: rm -rf "$RUNNER_TEMP/diplay-auth" "$RUNNER_TEMP/release.jks"
       - name: Publish interface screenshots to the ui-screenshots branch
         if: always() && hashFiles('common/build/screenshots/*.png') != ''
         run: |
@@ -78,6 +91,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: xiaosha-multiplay-${{ github.sha }}
-          path: mobile/build/outputs/apk/debug/*.apk
+          path: mobile/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 14

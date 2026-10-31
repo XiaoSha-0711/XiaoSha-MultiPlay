@@ -17,8 +17,8 @@ android {
         applicationId = "com.shihab.diplay"
         minSdk = 28
         targetSdk = 37
-        versionCode = 28
-        versionName = "0.2.9"
+        versionCode = 41
+        versionName = "0.2.22"
 
     }
 
@@ -117,4 +117,10 @@ tasks.register("assembleStandaloneDebug") {
     group = "build"
     description = "Build a standalone car-test APK with explicitly provisioned authentication."
     dependsOn(verifyStandaloneAuthentication, "assembleDebug")
+}
+
+tasks.register("assembleStandaloneRelease") {
+    group = "build"
+    description = "Build a signed standalone car-test release APK with explicitly provisioned authentication."
+    dependsOn(verifyStandaloneAuthentication, "assembleRelease")
 }

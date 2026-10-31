@@ -19,11 +19,20 @@ enum class VideoCodec { H264, H265 }
  * (avcC/hvcC) or a ChaCha20-Poly1305 sealed VideoFrame. The key is the DataStream output key
  * and the per-frame nonce is an 8-byte little-endian counter.
  */
-class ScreenStream(private val key: ByteArray, private val onDiagnostic: (String) -> Unit = {}) : Closeable {
+class ScreenStream(
+    private val key: ByteArray,
+    private val expectedPeer: InetAddress,
+    private val onDiagnostic: (String) -> Unit = {},
+) : Closeable {
     interface Listener {
         fun onCodec(codec: VideoCodec) {}
         fun onConfig(codecData: ByteArray) {}
         fun onFrame(naluBytes: ByteArray) {}
+        /**
+         * A frame with the iPhone's frame time ([senderNanos], from the header) and when its body finished
+         * arriving ([arrivalNanos], System.nanoTime). Listeners that do not pace frames ignore both.
+         */
+        fun onFrame(naluBytes: ByteArray, senderNanos: Long, arrivalNanos: Long) = onFrame(naluBytes)
         fun onClosed(cause: Throwable?) {}
     }
 
@@ -54,7 +63,7 @@ class ScreenStream(private val key: ByteArray, private val onDiagnostic: (String
 
     private fun accept(bound: ServerSocket) {
         try {
-            val accepted = bound.accept()
+            val accepted = bound.acceptFrom(expectedPeer) { onDiagnostic("Video: rejected sender outside the control session") }
             socket = accepted
             run(accepted)
         } catch (error: Exception) {
@@ -73,8 +82,9 @@ class ScreenStream(private val key: ByteArray, private val onDiagnostic: (String
                 val bodySize = readU32Le(header, 0)
                 if (bodySize > MAX_BODY) break
                 val body = readFully(input, bodySize) ?: break
+                val arrivalNanos = System.nanoTime()
                 stats.received(HEADER_LEN + bodySize)
-                onMessage(header, body)
+                onMessage(header, body, stats, arrivalNanos)
                 stats.processed()
             }
         } catch (error: Exception) {
@@ -87,23 +97,22 @@ class ScreenStream(private val key: ByteArray, private val onDiagnostic: (String
         }
     }
 
-    private fun onMessage(header: ByteArray, body: ByteArray) {
+    private fun onMessage(header: ByteArray, body: ByteArray, stats: StreamReceiveStats, arrivalNanos: Long) {
         when (header[OPCODE_OFFSET].toInt() and 0xff) {
             OP_VIDEO_FRAME -> {
-                val payload = if (body.size >= ScreenCodec.TAG_SIZE) {
-                    ScreenCodec.decryptFrame(key, frameCounter.get(), header, body)
-                        .also { frameCounter.incrementAndGet() }
-                } else {
-                    body
-                }
+                if (body.size < ScreenCodec.TAG_SIZE) return
+                val start = System.nanoTime()
+                val payload = ScreenCodec.decryptFrame(key, frameCounter.get(), header, body)
+                stats.decrypted(System.nanoTime() - start, body.size)
+                frameCounter.incrementAndGet()
                 if (firstFrameLogged.compareAndSet(false, true)) {
                     Log.i(
                         TAG,
                         "video first decrypted frame sealed=${body.size} plain=${payload.size} " +
-                        "head=${payload.hexPrefix(16)}",
+                        "head=${payload.hexPrefix(16)} chacha=${AirPlayCrypto.chachaImplementation}",
                     )
                 }
-                listener.onFrame(ScreenCodec.lengthPrefixedToAnnexB(payload))
+                listener.onFrame(ScreenCodec.lengthPrefixedToAnnexB(payload), ScreenCodec.senderNanos(header), arrivalNanos)
             }
             OP_VIDEO_CONFIG -> {
                 val (codec, codecData) = ScreenCodec.detectConfig(body)
@@ -141,9 +150,22 @@ private fun ByteArray.hexPrefix(length: Int): String =
 
 /** Extracts the avcC/hvcC codec-data record from a VideoConfig payload. */
 object ScreenCodec {
+    /**
+     * The frame time in a screen header: bytes 8..15, a little-endian NTP 32.32 value, in nanoseconds.
+     * On a Tang with iOS 27 consecutive main-screen frames are exactly 1/60 s apart (1/30 s on the
+     * cluster stream), and skipped frames leave whole multiples.
+     */
+    fun senderNanos(header: ByteArray): Long {
+        if (header.size < SENDER_TIME_OFFSET + 8) return 0L
+        var raw = 0L
+        for (index in 7 downTo 0) raw = (raw shl 8) or (header[SENDER_TIME_OFFSET + index].toLong() and 0xff)
+        return (raw ushr 32) * 1_000_000_000L + ((raw and 0xffff_ffffL) * 1_000_000_000L ushr 32)
+    }
+
+    private const val SENDER_TIME_OFFSET = 8
+
     fun decryptFrame(key: ByteArray, counter: Long, header: ByteArray, body: ByteArray): ByteArray =
-        if (body.size < TAG_SIZE) body
-        else AirPlayCrypto.chachaOpen(key, AirPlayCrypto.nonce64(counter), body, header)
+        AirPlayCrypto.chachaOpen(key, AirPlayCrypto.nonce64(counter), body, header)
 
     /**
      * Replaces each four-byte NAL length with an Annex B start code in place.

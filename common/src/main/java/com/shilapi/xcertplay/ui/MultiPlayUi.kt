@@ -7,6 +7,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -33,6 +35,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -44,16 +47,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.shilapi.xcertplay.host.R
 
-/** XiaoSha MultiPlay's palette: the blue of the phone's call screen on near-black. */
+/** XiaoSha MultiPlay's palette: the logo's blue on neutral charcoal, with flat panels and small corners. */
 internal object MultiPlayColors {
-    val Background = Color(0xFF141519)
-    val Surface = Color(0xFF222428)
-    val Border = Color(0xFF2F4459)
-    val Accent = Color(0xFF6EC1FF)
-    val OnAccent = Color(0xFF081420)
-    val Text = Color(0xFFF1F5FC)
-    val Muted = Color(0xFF9AA0AA)
-    val Warning = Color(0xFFFFC480)
+    val Background = Color(0xFF111214)
+    val Surface = Color(0xFF1B1D20)
+    val Border = Color(0xFF34383E)
+    val Accent = Color(0xFF66AEF9)
+    val OnAccent = Color(0xFF07121F)
+    val Text = Color(0xFFEDEFF2)
+    val Muted = Color(0xFF8E959E)
+    val Warning = Color(0xFFF2B35E)
+}
+
+/** Corner radii of the flat panel look: sharper than the usual rounded cards. */
+private object Corner {
+    val Panel = RoundedCornerShape(10.dp)
+    val Control = RoundedCornerShape(8.dp)
+    val Segment = RoundedCornerShape(6.dp)
 }
 
 /** One row of a settings group. The activity builds these from its saved preferences. */
@@ -116,12 +126,12 @@ internal fun MultiPlayScreen(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().height(48.dp)) {
                 if (home) {
-                    Image(painterResource(R.drawable.ic_multiplay_logo), null, Modifier.size(36.dp))
+                    Image(painterResource(R.drawable.ic_multiplay_logo), null, Modifier.size(34.dp))
                 } else {
                     RoundIcon(R.drawable.ic_back_arrow, stringResource(R.string.back), onBack)
                 }
                 Spacer(Modifier.width(12.dp))
-                Text(title, color = MultiPlayColors.Text, fontSize = 22.sp, fontWeight = FontWeight.Medium,
+                Text(title, color = MultiPlayColors.Text, fontSize = 20.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.4.sp,
                     maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                 if (home) {
                     RoundIcon(R.drawable.ic_settings_gear, stringResource(R.string.settings), onSettings)
@@ -129,7 +139,9 @@ internal fun MultiPlayScreen(
                     RoundIcon(R.drawable.ic_power, stringResource(R.string.exit), onExit)
                 }
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(10.dp))
+            HorizontalDivider(color = MultiPlayColors.Border, thickness = 1.dp)
+            Spacer(Modifier.height(18.dp))
             content()
         }
     }
@@ -138,15 +150,15 @@ internal fun MultiPlayScreen(
 @Composable
 private fun RoundIcon(icon: Int, description: String, onClick: () -> Unit) {
     Box(
-        Modifier.size(48.dp).background(MultiPlayColors.Surface, RoundedCornerShape(24.dp))
-            .border(1.dp, MultiPlayColors.Border, RoundedCornerShape(24.dp)).clickable(onClick = onClick),
+        Modifier.size(44.dp).background(MultiPlayColors.Surface, Corner.Control)
+            .border(1.dp, MultiPlayColors.Border, Corner.Control).clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) { Icon(painterResource(icon), description, tint = MultiPlayColors.Text, modifier = Modifier.size(22.dp)) }
 }
 
 @Composable
 internal fun HomePage(model: HomeModel, actions: HomeActions) {
-    Text(stringResource(R.string.home_title), color = MultiPlayColors.Text, fontSize = 28.sp, fontWeight = FontWeight.Medium)
+    Text(stringResource(R.string.home_title), color = MultiPlayColors.Text, fontSize = 30.sp, fontWeight = FontWeight.Bold)
     Spacer(Modifier.height(4.dp))
     Text(stringResource(R.string.home_subtitle), color = MultiPlayColors.Muted, fontSize = 15.sp)
     Spacer(Modifier.height(20.dp))
@@ -201,31 +213,40 @@ private fun AndroidAutoCard(model: HomeModel, actions: HomeActions) {
 
 @Composable
 private fun ProjectionCard(device: String, title: String, status: String, content: @Composable ColumnScope.() -> Unit) {
-    Column(
-        Modifier.fillMaxWidth().background(MultiPlayColors.Surface, RoundedCornerShape(24.dp))
-            .border(1.dp, MultiPlayColors.Border, RoundedCornerShape(24.dp)).padding(22.dp),
+    Row(
+        Modifier.fillMaxWidth().height(IntrinsicSize.Min).background(MultiPlayColors.Surface, Corner.Panel)
+            .border(1.dp, MultiPlayColors.Border, Corner.Panel).clip(Corner.Panel),
     ) {
-        Text(device.uppercase(), color = MultiPlayColors.Accent, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.5.sp)
-        Text(title, color = MultiPlayColors.Text, fontSize = 26.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 4.dp))
-        Text(status, color = MultiPlayColors.Muted, fontSize = 15.sp, modifier = Modifier.padding(top = 4.dp, bottom = 16.dp))
-        content()
+        Box(Modifier.width(5.dp).fillMaxHeight().background(MultiPlayColors.Accent))
+        Column(Modifier.weight(1f).padding(horizontal = 20.dp, vertical = 18.dp)) {
+            Text(device.uppercase(), color = MultiPlayColors.OnAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp,
+                modifier = Modifier.background(MultiPlayColors.Accent, Corner.Segment).padding(horizontal = 8.dp, vertical = 3.dp))
+            Text(title, color = MultiPlayColors.Text, fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))
+            Text(status, color = MultiPlayColors.Muted, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp, bottom = 16.dp))
+            content()
+        }
     }
 }
 
-/** The ways a card can connect; [current] is outlined as the remembered one. */
+/** The ways a card can connect, as one segmented control; [current] is the remembered one. */
 @Composable
 private fun MethodChips(options: List<String>, current: Int, onPick: (Int) -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(
+        Modifier.fillMaxWidth().padding(top = 12.dp).height(40.dp).clip(Corner.Control)
+            .border(1.dp, MultiPlayColors.Border, Corner.Control),
+    ) {
         options.forEachIndexed { index, title ->
             val selected = index == current
-            OutlinedButton(
-                onClick = { onPick(index) },
-                modifier = Modifier.weight(1f).height(40.dp),
-                shape = RoundedCornerShape(20.dp),
-                border = BorderStroke(1.dp, if (selected) MultiPlayColors.Accent else MultiPlayColors.Border),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = if (selected) MultiPlayColors.Accent else MultiPlayColors.Muted),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp),
-            ) { Text(title, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+            Box(
+                Modifier.weight(1f).fillMaxHeight()
+                    .background(if (selected) MultiPlayColors.Accent.copy(alpha = 0.18f) else Color.Transparent)
+                    .clickable { onPick(index) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(title, fontSize = 14.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (selected) MultiPlayColors.Accent else MultiPlayColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            if (index < options.lastIndex) Box(Modifier.width(1.dp).fillMaxHeight().background(MultiPlayColors.Border))
         }
     }
 }
@@ -233,15 +254,15 @@ private fun MethodChips(options: List<String>, current: Int, onPick: (Int) -> Un
 @Composable
 private fun PrimaryButton(title: String, enabled: Boolean = true, onClick: () -> Unit) {
     Button(
-        onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(20.dp),
+        onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().height(54.dp), shape = Corner.Control,
         colors = ButtonDefaults.buttonColors(containerColor = MultiPlayColors.Accent, contentColor = MultiPlayColors.OnAccent),
-    ) { Text(title, fontSize = 17.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+    ) { Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis) }
 }
 
 @Composable
 private fun SecondaryButton(title: String, enabled: Boolean = true, onClick: () -> Unit) {
     OutlinedButton(
-        onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(20.dp),
+        onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().height(50.dp), shape = Corner.Control,
         border = BorderStroke(1.dp, MultiPlayColors.Border),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = MultiPlayColors.Text),
     ) { Text(title, fontSize = 16.sp) }
@@ -251,7 +272,7 @@ private fun SecondaryButton(title: String, enabled: Boolean = true, onClick: () 
 @Composable
 private fun Notice(text: String, onClick: () -> Unit) {
     Text("$text  ›", color = MultiPlayColors.Warning, fontSize = 14.sp,
-        modifier = Modifier.fillMaxWidth().background(MultiPlayColors.Warning.copy(alpha = 0.11f), RoundedCornerShape(14.dp))
+        modifier = Modifier.fillMaxWidth().background(MultiPlayColors.Warning.copy(alpha = 0.12f), Corner.Control)
             .clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 12.dp))
 }
 
@@ -260,15 +281,15 @@ private fun Notice(text: String, onClick: () -> Unit) {
 internal fun GroupedPage(subtitle: String?, groups: List<SettingGroup>) {
     subtitle?.let { Text(it, color = MultiPlayColors.Muted, fontSize = 15.sp, modifier = Modifier.padding(start = 4.dp)) }
     groups.forEach { group ->
-        Text(group.title, color = MultiPlayColors.Accent, fontSize = 13.sp, fontWeight = FontWeight.Medium, letterSpacing = 1.sp,
-            modifier = Modifier.padding(start = 4.dp, top = 20.dp, bottom = 8.dp))
+        Text(group.title.uppercase(), color = MultiPlayColors.Accent, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp,
+            modifier = Modifier.padding(start = 2.dp, top = 22.dp, bottom = 8.dp))
         Column(
-            Modifier.fillMaxWidth().background(MultiPlayColors.Surface, RoundedCornerShape(20.dp))
-                .border(1.dp, MultiPlayColors.Border, RoundedCornerShape(20.dp)).padding(horizontal = 18.dp, vertical = 4.dp),
+            Modifier.fillMaxWidth().background(MultiPlayColors.Surface, Corner.Panel)
+                .border(1.dp, MultiPlayColors.Border, Corner.Panel).padding(horizontal = 16.dp, vertical = 2.dp),
         ) {
             group.items.forEachIndexed { index, item ->
                 if (index > 0 && item !is SettingItem.Note && group.items[index - 1] !is SettingItem.Note) {
-                    HorizontalDivider(color = MultiPlayColors.Border.copy(alpha = 0.6f), thickness = 1.dp)
+                    HorizontalDivider(color = MultiPlayColors.Border, thickness = 1.dp)
                 }
                 SettingRow(item)
             }
@@ -316,9 +337,9 @@ private fun SettingRow(item: SettingItem) {
                 item.description?.let { Text(it, color = MultiPlayColors.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 3.dp)) }
             }
             Box(
-                Modifier.size(22.dp).border(2.dp, if (item.selected) MultiPlayColors.Accent else MultiPlayColors.Border, RoundedCornerShape(11.dp)),
+                Modifier.size(22.dp).border(2.dp, if (item.selected) MultiPlayColors.Accent else MultiPlayColors.Border, RoundedCornerShape(5.dp)),
                 contentAlignment = Alignment.Center,
-            ) { if (item.selected) Box(Modifier.size(10.dp).background(MultiPlayColors.Accent, RoundedCornerShape(5.dp))) }
+            ) { if (item.selected) Box(Modifier.size(10.dp).background(MultiPlayColors.Accent, RoundedCornerShape(2.dp))) }
         }
         is SettingItem.Note -> Text(item.text, color = if (item.warning) MultiPlayColors.Warning else MultiPlayColors.Muted, fontSize = 14.sp,
             modifier = Modifier.padding(vertical = 10.dp))

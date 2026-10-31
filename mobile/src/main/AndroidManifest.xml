@@ -11,6 +11,7 @@
         android:localeConfig="@xml/locales_config"
         android:roundIcon="@mipmap/ic_multiplay"
         android:supportsRtl="true"
+        android:resizeableActivity="true"
         android:theme="@style/Theme.Xcertplay">
 
         <service android:name="com.shilapi.xcertplay.shared.MyCarAppService" tools:node="remove" />

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fps_counter_millis">%1$d ms</string>
+    <string name="fps_counter_no_value">–</string>
+    <string name="fps_counter_text">%1$d FPS\nRX %2$d · %3$s</string>
+    <string name="fps_counter_waiting">-- FPS</string>
+</resources>

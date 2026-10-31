@@ -104,7 +104,7 @@ class DiPlayActivity : ComponentActivity() {
             isAppearanceLightStatusBars = false
             hide(WindowInsetsCompat.Type.statusBars())
         }
-        setupError = runCatching { DiPlayBootstrap.ensure(this) }.exceptionOrNull()?.let {
+        setupError = runCatching { DiPlayBootstrap.ensure(this, AirPlayPersistence.loadMfiTarget(this)) }.exceptionOrNull()?.let {
             android.util.Log.e("DiPlaySetup", "CarPlay authentication could not be loaded", it)
             getString(R.string.setup_error_auth)
         }
@@ -297,10 +297,14 @@ class DiPlayActivity : ComponentActivity() {
         }
     }
 
+    /** The preset that matches the saved length; a length set in the CarPlay menu shows as the default size. */
+    private fun selectedSize(widthMillimeters: Int) =
+        com.shilapi.xcertplay.airplay.CarPlaySize.exact(widthMillimeters) ?: com.shilapi.xcertplay.airplay.CarPlaySize.DEFAULT
+
     private fun settingsGroups(): List<SettingGroup> {
         val sizes = com.shilapi.xcertplay.airplay.CarPlaySize.entries
-        val size = com.shilapi.xcertplay.airplay.CarPlaySize.fromWidthMillimeters(AirPlayPersistence.loadWidthPhysicalMm(this))
-        val buffers = com.shilapi.xcertplay.media.MediaAudioBuffer.presets
+        val size = selectedSize(AirPlayPersistence.loadWidthPhysicalMm(this))
+        val buffers = com.shilapi.xcertplay.media.MediaAudioBuffer.wirelessPresets
         return listOf(
             SettingGroup(getString(R.string.tab_connection), listOf(
                 SettingItem.Link(getString(R.string.connection_setup), wirelessModeLabel()) { page = "connection" },
@@ -341,8 +345,11 @@ class DiPlayActivity : ComponentActivity() {
                 if (resources.getBoolean(R.bool.config_advanced_audio_channel_mapping)) {
                     toggleItem(R.string.advanced_audio_channel_mapping, R.string.use_usage_content_type_routing_instead_of_stream_type, AirPlayPersistence.loadAdvancedAudioChannelMapping(this)) { AirPlayPersistence.saveAdvancedAudioChannelMapping(this, it) }
                 } else null,
-                choiceItem(getString(R.string.music_buffer), listOf(getString(R.string.s_300_ms_default), getString(R.string.s_500_ms), getString(R.string.s_1000_ms_most_stable)),
-                    buffers.indexOf(AirPlayPersistence.loadMediaBufferMillis(this)).coerceAtLeast(0)) { AirPlayPersistence.saveMediaBufferMillis(this, buffers[it]) },
+                choiceItem(getString(R.string.settings_music_buffer_wireless), buffers.map { getString(R.string.settings_music_buffer_ms, it) },
+                    buffers.indexOf(AirPlayPersistence.loadMediaBufferMillis(this, wireless = true)).coerceAtLeast(0)) {
+                    AirPlayPersistence.saveMediaBufferMillis(this, wireless = true, millis = buffers[it])
+                    AirPlayPersistence.saveMediaBufferMillis(this, wireless = false, millis = buffers[it])
+                },
                 channelItem(R.string.contrib_audio_home_media_channel_label, navigation = false),
                 channelItem(R.string.contrib_audio_home_nav_channel_label, navigation = true),
                 SettingItem.Note(getString(R.string.contrib_audio_home_nav_channel_note)),
@@ -742,7 +749,7 @@ class DiPlayActivity : ComponentActivity() {
                     appendLine("Authentication: local experimental beta identity; no remote fallback")
                     appendLine("CarPlay setup: ${if (setupError == null) "ready" else "authentication unavailable"}")
                     appendLine("Saved video preference (may differ from active session): ${if (AirPlayPersistence.loadHevcEnabled(appContext)) "HEVC" else "H.264"}; ${AirPlayPersistence.loadFps(appContext)} fps")
-                    appendLine("CarPlay size: ${com.shilapi.xcertplay.airplay.CarPlaySize.fromWidthMillimeters(AirPlayPersistence.loadWidthPhysicalMm(appContext)).label}")
+                    appendLine("CarPlay size: ${selectedSize(AirPlayPersistence.loadWidthPhysicalMm(appContext)).label}")
                     appendLine("Saved resolution preference (may differ from active session): ${AirPlayPersistence.loadDisplayScaleTenths(appContext) * 10}%")
                     appendLine("Session: ${if (CarPlayBackgroundSession.active) "active" else if (CarPlayBackgroundSession.hasSession()) "connecting" else "stopped"}")
                     appendLine("Head-unit board: ${Build.BOARD}; hardware: ${Build.HARDWARE}; build: ${Build.DISPLAY}")
@@ -901,7 +908,7 @@ class DiPlayActivity : ComponentActivity() {
     private fun space(height: Int) = View(this).apply { layoutParams = LinearLayout.LayoutParams(1, dp(height)) }
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
     companion object {
-        private val BG = Color.rgb(20, 21, 25)
+        private val BG = Color.rgb(17, 18, 20)
         private val SURFACE = Color.rgb(34, 36, 40)
         private val BORDER = Color.rgb(47, 68, 89)
         private val ACCENT = Color.rgb(110, 193, 255)

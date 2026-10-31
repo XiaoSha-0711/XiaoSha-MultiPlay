@@ -32,4 +32,5 @@ jobs:
           path: |
             shared/build/reports/tests/
             common/build/reports/tests/
+            common/build/reports/album-artwork-ui/
             mobile/build/reports/lint-results-debug.html

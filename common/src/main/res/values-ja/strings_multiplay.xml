@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="android_auto">Android Auto</string>
+    <string name="android_auto_card_device">ANDROID スマホ</string>
+    <string name="android_auto_connected">Android Auto に接続しました。</string>
+    <string name="android_auto_hint">セルフモード、または Android スマホとワイヤレス／USB で接続します。</string>
+    <string name="android_auto_self_mode">このスマホでセルフモード</string>
+    <string name="android_auto_settings">Android Auto の設定</string>
+    <string name="android_auto_unavailable">このビルドには Android Auto が含まれていません。</string>
+    <string name="carplay_card_device">IPHONE</string>
+    <string name="choose_speed_camera_app">ホーム画面のボタンで開くアプリを選択</string>
+    <string name="connect_wireless">ワイヤレスで接続</string>
+    <string name="day_night_auto">自動 · Android に従う</string>
+    <string name="day_night_day">常に昼</string>
+    <string name="day_night_mode">昼/夜</string>
+    <string name="day_night_night">常に夜</string>
+    <string name="exit">終了</string>
+    <string name="exit_when_disconnected">切断後にアプリを閉じる</string>
+    <string name="exit_when_disconnected_description">CarPlay が終了した、または iPhone の Bluetooth が切れて 30 秒以内に CarPlay が戻らない場合、何も動かし続けないようアプリを閉じます。</string>
+    <string name="home_eyebrow">スマホを車の画面に</string>
+    <string name="home_subtitle">iPhone は CarPlay、Android スマホは Android Auto。</string>
+    <string name="home_title">スマホを選択</string>
+    <string name="hotspot_not_set">車のホットスポットが未設定です。接続設定で名前とパスワードを追加してください。</string>
+    <string name="method_self_mode">セルフモード</string>
+    <string name="method_usb">USB</string>
+    <string name="method_wireless">ワイヤレス</string>
+    <string name="not_selected">未選択</string>
+    <string name="open_android_auto">Android Auto を開く</string>
+    <string name="speed_camera">速度取締り通知</string>
+    <string name="speed_camera_app">速度取締りアプリ</string>
+    <string name="tab_advanced">詳細</string>
+    <string name="tab_audio">オーディオ</string>
+    <string name="tab_connection">接続</string>
+    <string name="tab_display">表示</string>
+</resources>

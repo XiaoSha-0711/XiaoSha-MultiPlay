@@ -1,12 +1,12 @@
 package com.shilapi.xcertplay.mfi
 
+import com.shilapi.xcertplay.compat.Base64Compat
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
-import java.util.Base64
 import java.util.UUID
 import com.shilapi.xcertplay.iap2.message.Iap2AuthenticationMessages
 
@@ -40,6 +40,9 @@ class RemoteMfiAuthenticationClient(
         require(baseAddress.isNotEmpty()) { "Remote MFI server address must not be blank" }
         require(baseAddress.startsWith("http://") || baseAddress.startsWith("https://")) {
             "Remote MFI server address must use http:// or https://"
+        }
+        require(baseAddress.startsWith("https://") || isPrivateNetworkHost(hostOf(baseAddress))) {
+            "Remote MFI server address must use https:// unless the host is on a private network"
         }
         require(connectTimeoutMillis > 0) { "connectTimeoutMillis must be positive" }
         require(readTimeoutMillis > 0) { "readTimeoutMillis must be positive" }
@@ -92,7 +95,7 @@ class RemoteMfiAuthenticationClient(
             )
         }
         val requestId = UUID.randomUUID().toString()
-        val encodedChallenge = Base64.getEncoder().encodeToString(challenge.copyOf())
+        val encodedChallenge = Base64Compat.encode(challenge.copyOf())
         val response = request(
             method = "POST",
             path = SIGN_PATH,
@@ -255,7 +258,7 @@ class RemoteMfiAuthenticationClient(
     }
 
     private fun decodeBase64(encoded: String, field: String): ByteArray = try {
-        Base64.getDecoder().decode(encoded)
+        Base64Compat.decode(encoded)
     } catch (failure: IllegalArgumentException) {
         throw MfiInvalidDataException("Remote $field is not valid base64", failure)
     }
@@ -275,6 +278,33 @@ class RemoteMfiAuthenticationClient(
             statusCode in 500..599
 
     companion object {
+        private val IPV4_LITERAL = Regex("(0|[1-9]\\d{0,2})(\\.(0|[1-9]\\d{0,2})){3}")
+
+        private fun hostOf(address: String): String? =
+            runCatching { URL(address).host }.getOrNull()?.lowercase()?.takeIf { it.isNotEmpty() }
+
+        /**
+         * Decides from the text alone and never resolves a name. A single-label or .local name is trusted by its
+         * text, so a search domain or hosts entry can still point it at a public address.
+         * A dotted quad with a leading zero is not a literal: libc may read 010 as octal.
+         * A single label needs a letter and must not look like hex, so 134744072 and 0x08080808 are refused.
+         */
+        internal fun isPrivateNetworkHost(host: String?): Boolean {
+            if (host == null) return false
+            val literal = host.startsWith("[") || IPV4_LITERAL.matches(host)
+            if (!literal) {
+                val singleLabel = '.' !in host && host.any { it.isLetter() } && !host.startsWith("0x")
+                return host == "localhost" || singleLabel || host.endsWith(".local")
+            }
+            val address = runCatching { java.net.InetAddress.getByName(host) }.getOrNull() ?: return false
+            val bytes = address.address
+            val carrierGradeNat = bytes.size == 4 &&
+                (bytes[0].toInt() and 0xff) == 100 && (bytes[1].toInt() and 0xc0) == 0x40
+            val uniqueLocalV6 = bytes.size == 16 && (bytes[0].toInt() and 0xfe) == 0xfc
+            return address.isLoopbackAddress || address.isSiteLocalAddress ||
+                address.isLinkLocalAddress || carrierGradeNat || uniqueLocalV6
+        }
+
         private const val CERTIFICATE_PATH = "/mfi/certificate"
         private const val SIGN_PATH = "/mfi/sign"
         private const val RESET_PATH = "/mfi/reset"
