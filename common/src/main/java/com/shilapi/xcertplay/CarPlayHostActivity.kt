@@ -4714,6 +4714,7 @@ open class CarPlayHostActivity : ComponentActivity() {
                         installIphoneCornerMask(session, pending.second.first, pending.second.second)
                     } else clearIphoneCornerMask()
                     CarPlayBackgroundSession.active = true
+                    CarPlayBackgroundSession.stage = null
                     LastConnectionProblem.clear(this@CarPlayHostActivity)
                     showConnectionHelp(null)
                     callPopupSessionReady = true
@@ -6027,7 +6028,9 @@ open class CarPlayHostActivity : ComponentActivity() {
     /** [englishMessage] is [message] in English, which [friendlyStage] reads for its keywords. */
     private fun setConnectionStage(message: String, englishMessage: String = message) {
         latestStage = message
-        stageStatusView?.text = friendlyStage(message, englishMessage)
+        val friendly = friendlyStage(message, englishMessage)
+        CarPlayBackgroundSession.stage = friendly
+        stageStatusView?.text = friendly
         updateDebugOverlays()
     }
 
@@ -6308,6 +6311,8 @@ internal fun statusBarHiddenByAnotherWindow(display: CarPlaySessionDisplay, widt
 /** Process-local hand-off for keeping the CarPlay session alive while no Activity is visible. */
 internal object CarPlayBackgroundSession {
     @Volatile var active = false
+    /** The connection step the CarPlay screen shows, so the home screen can show it too while connecting. */
+    @Volatile var stage: String? = null
     @Volatile var callPopupReady = false
     /** The running session's hotspot: a host that adopts the session never saw its HotspotReady. */
     @Volatile var hotspotReady: CarPlayStatus.HotspotReady? = null

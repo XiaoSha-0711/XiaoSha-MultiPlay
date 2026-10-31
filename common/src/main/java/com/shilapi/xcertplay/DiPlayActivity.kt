@@ -776,7 +776,7 @@ class DiPlayActivity : ComponentActivity() {
         carPlayStatus = when {
             setupError != null -> getString(R.string.setup_needs_attention)
             CarPlayBackgroundSession.active -> getString(R.string.carplay_connected)
-            carPlayRunning -> getString(R.string.connecting_to_your_iphone)
+            carPlayRunning -> CarPlayBackgroundSession.stage?.takeIf { it.isNotBlank() } ?: getString(R.string.connecting_to_your_iphone)
             DiPlayPreferences.phoneAddress(this) != null -> "${getString(R.string.status_ready_for_prefix)}${DiPlayPreferences.phoneName(this)}"
             else -> getString(R.string.ready_when_you_are)
         }

@@ -71,7 +71,7 @@ internal class DiPlayButton(context: Context) : Button(context) {
                 stroke = ColorUtils.blendARGB(surface, palette.overlayDanger, 0.48f)
             }
         }
-        val radius = minOf(24f * density, (if (height > 0) height else minHeight) * 20f / 56)
+        val radius = minOf(8f * density, (if (height > 0) height else minHeight) * 8f / 56)
         setTextColor(text)
         background = RippleDrawable(
             ColorStateList.valueOf(palette.ripple),
